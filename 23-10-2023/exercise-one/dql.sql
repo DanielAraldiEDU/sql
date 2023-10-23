@@ -11,34 +11,45 @@ SELECT * FROM responsavel;
 SELECT * FROM pet
 	WHERE raca != 'pincher' AND data_nasc > '2019-01-01';
 
+-- seleciona apenas valores maiores que o ano de 2019
+SELECT * FROM pet
+	WHERE raca != 'pincher' AND YEAR(data_nasc) > '2019';
+
 -- pag 10
 -- seleção de COLUNAS
 -- seleciona nome, raça e peso para todos os pets
 SELECT nome, raca, peso FROM pet;
 
 -- pag 11
--- distinct
+-- distinct 
+-- seleciona raças de pets que são diferentes uma das outras
 SELECT DISTINCT raca FROM pet;
 
 -- pag 12
--- ORDER BY ASC(padrão) ou DESC 
+-- ORDER BY ASC (padrão) ou DESC 
 SELECT nome, raca, peso FROM pet ORDER BY nome, raca DESC;
 -- pag 13
-SELECT nome,cpf FROM responsavel ORDER BY nome;
+-- ORDER BY ASC (padrão)
+SELECT nome, cpf FROM responsavel ORDER BY nome;
 
 -- pag 14
 -- LIMIT
-SELECT uf, cidade FROM endereco LIMIT 0,3 ;
-SELECT uf, cidade FROM endereco LIMIT 5,3 ;
-SELECT uf, cidade, cep FROM endereco ORDER BY uf LIMIT 3,6 ;
+-- utilizado quando você deseja limitar o tamanho da pesquisa
+-- o primeiro número corresponde ao index de início da pesquisa
+-- o segundo número corresponde a quantidade de itens a serem selecionados levando em consideração o index de início
+SELECT uf, cidade FROM endereco LIMIT 0,3;
+SELECT uf, cidade FROM endereco LIMIT 5,3;
+SELECT uf, cidade, cep FROM endereco ORDER BY uf LIMIT 3,6;
 
 -- pag 16
 -- UNION
+-- não existe a repetição de valores na busca
 SELECT * FROM pet WHERE raca = 'pincher' UNION
 SELECT * FROM pet WHERE peso > 10;
 
 -- pag 17
 -- UNION ALL
+-- existe a repetição de valores da busca
 SELECT * FROM pet WHERE raca = 'pincher' UNION ALL
 SELECT * FROM pet WHERE peso > 10;
 
@@ -56,7 +67,8 @@ SELECT p.nome, p.raca, c.dt, c.horario FROM pet p LEFT JOIN consulta c ON (c.cod
 -- Junção usando RIGHT JOIN
 SELECT p.nome, p.raca, c.dt, c.horario FROM pet p RIGHT JOIN consulta c ON (c.cod_pet = p.cod);
 -- Junção usando CROSS JOIN
-SELECT p.nome, p.raca, c.dt, c.horario FROM pet p  CROSS JOIN consulta c ON (c.cod_pet = p.cod);
+-- usado quando duas tabelas não possuem uma chave estrageira se referenciando
+SELECT p.nome, p.raca, c.dt, c.horario FROM pet p CROSS JOIN consulta c ON (c.cod_pet = p.cod);
 
 -- pag 24
 -- Funções de agregação
@@ -82,7 +94,8 @@ SELECT COUNT(raca) FROM pet GROUP BY raca;
 -- pag 28
 -- Funções com String
 SELECT CHAR_LENGTH('Joaquim');
-SELECT CONCAT('Joaquim',' ','Silva');
+SELECT CONCAT('Joaquim', ' ','Silva');
+-- coloca o primeiro caracter entre todos os próximos itens
 SELECT CONCAT_WS('/', '04', '02', '2023');
 
 -- pag 29
