@@ -100,6 +100,7 @@ SELECT CONCAT_WS('/', '04', '02', '2023');
 
 -- pag 29
 -- Funções com String
+-- ache o index aonde aquele valor existe na string, caso não ache retorna 0
 SELECT INSTR('Joaquim Silva 28 anos', '29');
 SELECT INSTR('Joaquim Silva 29 anos', '29');
 
@@ -113,8 +114,10 @@ SELECT LEFT('JOAQUIM', 4);
 
 -- pag 31
 -- Funções com String
-SELECT LPAD('51',6, '0');
-SELECT RPAD('51',6, '0');
+-- adiciona string '0' à esquerda da string
+SELECT LPAD('51', 6, '0');
+-- adiciona string '0' à direita da string
+SELECT RPAD('51', 6, '0');
 
 -- pag 32
 -- Funções com String
@@ -125,7 +128,8 @@ SELECT CONCAT('[', TRIM('          Joaquim                    '), '] ');
 -- pag 33
 -- Funções com String
 SELECT REPLACE('www.dlweb.com', '.com', '.com.br');
-SELECT RIGHT('ALEXANDRE',5);
+-- pega as primeiras string à direita
+SELECT RIGHT('ALEXANDRE', 5);
 
 -- pag 34
 -- Funções com String
