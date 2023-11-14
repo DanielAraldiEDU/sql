@@ -1,8 +1,6 @@
--- Create schema
 CREATE SCHEMA IF NOT EXISTS Mundo;
 USE Mundo;
 
--- Create tables
 CREATE TABLE Continente (
 	id INT AUTO_INCREMENT,
     nome VARCHAR(50) NOT NULL,
@@ -37,7 +35,6 @@ CREATE TABLE Cidade (
     FOREIGN KEY(id_estado) REFERENCES Estado(id)
 );
 
--- Create inserts
 INSERT INTO Continente (nome) VALUES ('América do Norte');
 INSERT INTO Continente (nome) VALUES ('América do Sul');
 
@@ -64,7 +61,6 @@ INSERT INTO Cidade (id_estado, nome, populacao, capital_nacional) VALUES (6, 'S�
 INSERT INTO Cidade (id_estado, nome, populacao, capital_nacional) VALUES (7, 'Buenos Aires', 16.529, 1);
 INSERT INTO Cidade (id_estado, nome, populacao, capital_nacional) VALUES (8, 'Bariloche', 0.110, 0);
 
--- Create queries
 SELECT p.nome AS nome_pais, e.nome AS nome_estado
 FROM Estado AS e 
 INNER JOIN Pais AS p 
