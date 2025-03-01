@@ -8,8 +8,8 @@
 SELECT d.nome_departamento, COUNT(f.numero_departamento) as numero_funcionarios
 FROM DEPARTAMENTO d
 JOIN FUNCIONARIO f ON d.numero_departamento = f.numero_departamento
-WHERE f.salario > 30000
-GROUP BY d.numero_departamento, d.nome_departamento;
+GROUP BY d.numero_departamento, d.nome_departamento
+HAVING AVG(f.salario) > 30000;
 
 -- B. Suponha que queiramos o número de funcionários do sexo masculino em
 -- cada departamento que ganhe mais de R$ 30.000,00, em vez de todos os
