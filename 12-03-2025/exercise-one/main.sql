@@ -118,76 +118,248 @@ INSERT INTO consulta(cod_pet, cod_vet, horario, dt)
 -- 1. Crie uma função que insira um novo registro na tabela Endereco e 
 --   retorne o código do endereço inserido.
 -- Obs.: RETURNING cod; no final de um select retorna o cod criado (auto gerado).
-CREATE OR REPLACE FUNCTION addAddress(logradouro varchar(100), numero integer, complemento varchar(50), cep varchar(12), cidade varchar(50), uf varchar(2))
+CREATE OR REPLACE FUNCTION inserirEndereco(logradouro varchar(100), numero integer, complemento varchar(50), cep varchar(12), cidade varchar(50), uf varchar(2))
 RETURNS INTEGER AS
 $$
-INSERT INTO endereco(logradouro, numero, complemento, cep, cidade, uf) values ($1, $2, $3, $4, $5, $6)
-RETURNING cod;
+	INSERT INTO endereco(logradouro, numero, complemento, cep, cidade, uf) values ($1, $2, $3, $4, $5, $6)
+	RETURNING cod;
 $$
 LANGUAGE SQL;
 
-SELECT addAddress('Osmar Lang', 170, 'Casa', '88356-315', 'Brusque', 'SC');
+SELECT inserirEndereco('Osmar Lang', 170, 'Casa', '88356-315', 'Brusque', 'SC');
 
 -- 2. Crie um procedimento que atualize o email de um responsável com base no seu código.
-CREATE OR REPLACE PROCEDURE updateEmail(userId integer, email varchar(100))
+CREATE OR REPLACE PROCEDURE atualizaEmailResponsavel(user_id integer, email varchar(100))
 LANGUAGE SQL AS
 $$
 	UPDATE Responsavel SET email = $2 WHERE cod = $1;
 $$;
 
-CALL updateEmail(1, 'new@new.com');
-
-SELECT * FROM Responsavel;
+CALL atualizaEmailResponsavel(1, 'novo@gmail.com');
 
 -- 3. Faça um procedumento para excluir um responsável. 
 --	  Excluir seus pets e endereços. Sem a utilização do CASCADE na definição da tabela.
-CREATE OR REPLACE PROCEDURE deleteUser(userId integer)
-LANGUAGE SQL AS
-$$
-	DELETE FROM Pet WHERE cod_resp IN (SELECT cod_resp FROM Consulta WHERE cod_pet = $1);
-	DELETE FROM Endereco WHERE cod = $1;
-	DELETE FROM Responsavel WHERE cod = $1;
+CREATE OR REPLACE PROCEDURE deletarResponsavel(user_id INTEGER)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_cod_end INTEGER;
+BEGIN
+    SELECT cod_end INTO v_cod_end FROM Responsavel WHERE cod = user_id;
+    
+    DELETE FROM Consulta WHERE cod_pet IN (SELECT cod FROM Pet WHERE cod_resp = user_id);
+    DELETE FROM Pet WHERE cod_resp = user_id;
+    DELETE FROM Responsavel WHERE cod = user_id;
+    
+    IF v_cod_end IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM Responsavel WHERE cod_end = v_cod_end
+        UNION
+        SELECT 1 FROM Veterinario WHERE cod_end = v_cod_end
+    ) THEN
+        DELETE FROM Endereco WHERE cod = v_cod_end;
+    END IF;
+END;
 $$;
 
-CALL deleteUser(1);
-
-SELECT * FROM Responsavel;
-SELECT * FROM Pet;
-SELECT * FROM Endereco;
+CALL deletarResponsavel(1);
 
 -- 4. Crie uma função que liste todas as consultas agendadas em um determinado periodo (entre duas datas)
 --   Deve retornar uma tabela com os campos data da consulta, nome do responsavel,
 --   nome do pet, telefone do responsavel e nome do veterinario.
+CREATE OR REPLACE FUNCTION listarConsultas(inicio DATE, fim DATE)
+RETURNS TABLE (
+    data_consulta DATE,
+    nome_responsavel VARCHAR(100),
+    nome_pet VARCHAR(100),
+    telefone_responsavel VARCHAR(50),
+    nome_veterinario VARCHAR(100)
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        c.dt AS data_consulta,
+        r.nome AS nome_responsavel,
+        p.nome AS nome_pet,
+        r.fone AS telefone_responsavel,
+        v.nome AS nome_veterinario
+    FROM Consulta c
+    JOIN Pet p ON c.cod_pet = p.cod
+    JOIN Responsavel r ON p.cod_resp = r.cod
+    JOIN Veterinario v ON c.cod_vet = v.cod
+    WHERE c.dt BETWEEN inicio AND fim;
+END;
+$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION listSchedule(startDate date, endDate date, out scheduleDate date, out respName varchar(100), out petName varchar(100), out respPhone varchar(50), out vetName varchar(100))
-RETURNS record AS
-$$
-	
-$$;
-
-SELECT listSchedule('2023-10-15', '2023-10-20');
+SELECT listarConsultas('2023-10-15', '2023-10-20');
 
 -- 5. Crie uma função que receba os dados do veterinario por parâmetro, armazene na tabela “veterinario” e 
 --   retorne todos os veterinários com a mesma especialidade.
+CREATE OR REPLACE FUNCTION veterinarioPorEspecialidade(
+    p_nome VARCHAR(100),
+    p_crmv NUMERIC(10),
+    p_especialidade VARCHAR(50),
+    p_fone VARCHAR(50),
+    p_email VARCHAR(100),
+    p_cod_end INTEGER
+) RETURNS TABLE (
+    cod INTEGER,
+    nome VARCHAR(100),
+    crmv NUMERIC(10),
+    especialidade VARCHAR(50),
+    fone VARCHAR(50),
+    email VARCHAR(100),
+    cod_end INTEGER
+) AS $$
+DECLARE
+    v_cod INTEGER;
+BEGIN
+    INSERT INTO Veterinario (nome, crmv, especialidade, fone, email, cod_end)
+    VALUES (p_nome, p_crmv, p_especialidade, p_fone, p_email, p_cod_end);
+
+    RETURN QUERY
+    SELECT v.cod AS vet_cod, v.nome, v.crmv, v.especialidade, v.fone, v.email, v.cod_end
+    FROM Veterinario v
+    WHERE v.especialidade = p_especialidade;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT veterinarioPorEspecialidade('Bruno Renan Diego de Oliveira', '45062', 'clinico geral', 'brunorenanoliveira@edu.uniso.br', '(47) 99603-9867', 6);
 
 -- 6. Crie um procedimento para adicionar um novo pet, associando-o a um responsável existente.
+CREATE OR REPLACE PROCEDURE adicionarPetParaResponsavel(
+    p_nome VARCHAR(100), 
+    p_raca VARCHAR(50), 
+    p_peso DECIMAL(5,2), 
+    p_data_nasc DATE, 
+    p_cod_resp INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO Pet (nome, raca, peso, data_nasc, cod_resp)
+    VALUES (p_nome, p_raca, p_peso, p_data_nasc, p_cod_resp);
+END;
+$$;
+
+CALL adicionarPetParaResponsavel('Cristal', 'Poodle', 10, '2023-02-28', 2);
 
 -- 7. Escreva uma função que conte quantos pets um determinado responsável possui.
+CREATE OR REPLACE FUNCTION contarPetsResponsavel(user_id INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_contador INTEGER;
+BEGIN
+    -- Contar quantos pets estão associados ao responsável com o código fornecido
+    SELECT COUNT(*) INTO v_contador
+    FROM Pet
+    WHERE cod_resp = user_id;
+    
+    -- Retornar o número de pets encontrados
+    RETURN v_contador;
+END;
+$$;
+
+SELECT contarPetsResponsavel(2);
 
 -- 8. Faça uma função que calcule a idade atual de um pet com base na sua data de nascimento.
+CREATE OR REPLACE FUNCTION calcularIdadePet(pet_id INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_data_nasc DATE;
+    v_idade INTEGER;
+BEGIN
+	SELECT data_nasc INTO v_data_nasc
+    FROM Pet
+    WHERE cod = pet_id;
+
+	SELECT EXTRACT(YEAR FROM AGE(v_data_nasc)) INTO v_idade;
+    
+    RETURN v_idade;
+END;
+$$;
+
+SELECT calcularIdadePet(3);
 
 -- 9. Função que retorna todas as consultas agendadas de um determinado veterinário
 --     em uma data especifica.
+CREATE OR REPLACE FUNCTION consultasAgendadasVeterinario(p_cod_vet INTEGER, p_data DATE)
+RETURNS TABLE(cod_consulta INTEGER, dt DATE, horario TIME, nome_pet VARCHAR, nome_responsavel VARCHAR) 
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT c.cod, c.dt, c.horario, p.nome, r.nome
+    FROM Consulta c
+    JOIN Pet p ON c.cod_pet = p.cod
+    JOIN Responsavel r ON p.cod_resp = r.cod
+    WHERE c.cod_vet = p_cod_vet
+    AND c.dt = p_data
+    ORDER BY c.horario;
+END;
+$$;
 
--- 10. Procedimento que retorna o nome e telefone do responsável de um determinado pet
+SELECT consultasAgendadasVeterinario(1, '2025-10-05'); -- Não tem consultas
+SELECT consultasAgendadasVeterinario(1, '2023-10-05'); -- Tem consultas
+
+
+-- 10. Procedimento (função) que retorna o nome e telefone do responsável de um determinado pet
 -- 	   Faça uso do OUT para retornar os valores solicitados.
+CREATE OR REPLACE FUNCTION obterPesponsavelPet(p_cod_pet INTEGER, OUT p_nome_resp VARCHAR(100), OUT p_telefone_resp VARCHAR(50))
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    SELECT r.nome, r.fone
+    INTO p_nome_resp, p_telefone_resp
+    FROM Pet p
+    JOIN Responsavel r ON p.cod_resp = r.cod
+    WHERE p.cod = p_cod_pet;
+END;
+$$;
+
+SELECT obterPesponsavelPet(3);
 
 -- 11. Função que retorna o nome do responsável pelo CPF ou uma mensagem caso não encontrado.
-
---> COALESCE retornar o primeiro valor não nulo
+-- COALESCE retornar o primeiro valor não nulo
 -- Evita valores NULL inesperados, substituindo-os por valores padrões.
 -- Melhora relatórios e consultas, evitando exibir campos vazios.
 -- Garante compatibilidade em cálculos, evitando problemas de NULL em operações matemáticas.
-SELECT COALESCE(null, 'Responsável não encontrado');
+CREATE OR REPLACE FUNCTION obterResponsavelPorCPF(p_cpf varchar(12))
+RETURNS VARCHAR
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_nome_resp VARCHAR;
+BEGIN
+    SELECT r.nome
+    INTO v_nome_resp
+    FROM Responsavel r
+    WHERE r.cpf = p_cpf;
+
+    RETURN COALESCE(v_nome_resp, 'Responsável não encontrado');
+END;
+$$;
+
+SELECT obterResponsavelPorCPF('05880199096'); -- Não existe responsável com este CPF
+SELECT obterResponsavelPorCPF('23101771056'); -- Existe responsável com este CPF
 
 -- 12. Crie uma função que receba um código de veterinário e retorne o total de consultas realizadas por ele.
+CREATE OR REPLACE FUNCTION totalConsultasVeterinario(p_cod_vet INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_total_consultas INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO v_total_consultas
+    FROM Consulta
+    WHERE cod_vet = p_cod_vet;
+
+    RETURN v_total_consultas;
+END;
+$$;
+
+SELECT totalConsultasVeterinario(1);
