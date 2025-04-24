@@ -1,0 +1,30 @@
+-- 1. Listar o nome e o CPF de todos os funcionários do sexo feminino. 
+π primeiro_nome, nome_meio, ultimo_nome, cpf σ sexo = 'F' (FUNCIONARIO)
+
+-- 2. Obter os nomes dos projetos que ocorrem em São Paulo.
+π nome_projeto σ local_projeto = 'São Paulo' (PROJETO)
+
+-- 3. Recuperar os nomes e endereços dos funcionários que trabalham no departamento de ‘Administração’.
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome, F.endereco (ρ F (FUNCIONARIO) ⨝ D.numero_departamento = F.numero_departamento and D.nome_departamento = 'Administração' ρ D (DEPARTAMENTO))
+
+-- 4. Obter o nome de cada funcionário e o total de horas que ele trabalha em projetos.
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome, T.horas, P.nome_projeto (ρ F (FUNCIONARIO) ⨯ ρ P (PROJETO) ⨝ F.cpf = T.cpf_funcionario and T.numero_projeto = P.numero_projeto ρ T (TRABALHA_EM))
+
+-- 5. Listar o nome dos projetos nos quais ‘Alice’ trabalha.
+π P.nome_projeto (ρ P (PROJETO) ⨝ F.primeiro_nome = 'Alice' and F.numero_departamento = P.numero_departamento ρ F (FUNCIONARIO))
+
+-- 6. Obter o nome dos funcionários que têm dependentes do sexo feminino.
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome (ρ F (FUNCIONARIO) ⨝ F.cpf = D.cpf_funcionario ρ D (DEPENDENTE))
+
+-- 7. Listar os nomes dos funcionários que trabalham em todos os projetos localizados em ‘São Paulo’.
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome (ρ F (FUNCIONARIO) ⨝ F.numero_departamento = P.numero_departamento and P.local_projeto = 'São Paulo' ρ P (PROJETO))
+
+-- 8. Mostrar o nome dos funcionários e o nome de seus supervisores.
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome, F2.primeiro_nome, F2.nome_meio, F2.ultimo_nome (σ F.cpf_supervisor = F2.cpf (ρ F (FUNCIONARIO) ⨯ ρ F2 (FUNCIONARIO)))
+
+
+-- 9. Para cada departamento, listar o nome do gerente e a data de início da gerência.
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome, D.data_inicio_gerente (ρ D (DEPARTAMENTO) ⨝ D.cpf_gerente = F.cpf ρ F (FUNCIONARIO))
+
+-- 10. Exibir o número do projeto e a média de horas trabalhadas por projeto.
+π T.numero_projeto, media_horas γ T.numero_projeto; AVG(T.horas)→media_horas ρ T (TRABALHA_EM)
