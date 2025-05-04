@@ -30,7 +30,7 @@ ON F.primeiro_nome = 'Alice' AND F.numero_departamento = P.numero_departamento
 SELECT DISTINCT F.primeiro_nome, F.nome_meio, F.ultimo_nome
 FROM FUNCIONARIO AS F
 JOIN DEPENDENTE AS D
-ON F.cpf = D.cpf_funcionario
+ON F.cpf = D.cpf_funcionario AND D.sexo = 'F'
 
 -- 7. Listar os nomes dos funcionários que trabalham em todos os projetos localizados em ‘São Paulo’.
 SELECT DISTINCT F.primeiro_nome, F.nome_meio, F.ultimo_nome
