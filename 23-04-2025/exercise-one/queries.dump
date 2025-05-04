@@ -14,7 +14,7 @@
 π P.nome_projeto (ρ P (PROJETO) ⨝ F.primeiro_nome = 'Alice' and F.numero_departamento = P.numero_departamento ρ F (FUNCIONARIO))
 
 -- 6. Obter o nome dos funcionários que têm dependentes do sexo feminino.
-π F.primeiro_nome, F.nome_meio, F.ultimo_nome (ρ F (FUNCIONARIO) ⨝ F.cpf = D.cpf_funcionario ρ D (DEPENDENTE))
+π F.primeiro_nome, F.nome_meio, F.ultimo_nome (ρ F (FUNCIONARIO) ⨝ F.cpf = D.cpf_funcionario and D.sexo = 'F' (ρ D (DEPENDENTE)))
 
 -- 7. Listar os nomes dos funcionários que trabalham em todos os projetos localizados em ‘São Paulo’.
 π F.primeiro_nome, F.nome_meio, F.ultimo_nome (ρ F (FUNCIONARIO) ⨝ F.numero_departamento = P.numero_departamento and P.local_projeto = 'São Paulo' ρ P (PROJETO))
