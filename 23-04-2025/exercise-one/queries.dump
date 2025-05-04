@@ -22,7 +22,6 @@
 -- 8. Mostrar o nome dos funcionários e o nome de seus supervisores.
 π F.primeiro_nome, F.nome_meio, F.ultimo_nome, F2.primeiro_nome, F2.nome_meio, F2.ultimo_nome (σ F.cpf_supervisor = F2.cpf (ρ F (FUNCIONARIO) ⨯ ρ F2 (FUNCIONARIO)))
 
-
 -- 9. Para cada departamento, listar o nome do gerente e a data de início da gerência.
 π F.primeiro_nome, F.nome_meio, F.ultimo_nome, D.data_inicio_gerente (ρ D (DEPARTAMENTO) ⨝ D.cpf_gerente = F.cpf ρ F (FUNCIONARIO))
 
